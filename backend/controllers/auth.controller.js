@@ -57,7 +57,7 @@ export const signup = async (req, res) => {
 
     } catch (error) {
         console.log(`error in signup controller: ${error.message}`);
-        errorHandler();
+        errorHandler(error, res);
     }
 }
 export const login = async (req, res) => {
