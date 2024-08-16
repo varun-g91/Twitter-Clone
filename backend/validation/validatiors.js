@@ -19,13 +19,13 @@ export function validateLogin(identifier, password) {
 
 
 export const validatePassword = (password) => {
-    const minLength = 10;
+    console.log(password);
+    const minLength = 8;
     const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|_<>]/.test(password);
 
-    if (password.length < minLength || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+    if (password.length < minLength || !hasUpperCase || !hasNumber || !hasSpecialChar) {
         throw new Error('Please choose a stonger password');
     }
 

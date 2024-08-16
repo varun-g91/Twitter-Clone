@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import { errorHandler } from "../middleware/errorHandler.js";
 import Notification from "../models/notification.model.js";
 import { validatePassword } from "../validation/validatiors.js";
+import bcrypt from "bcryptjs/dist/bcrypt.js";
 import { v2 as cloudinary } from "cloudinary";
 
 export const getUserProfile = async (req, res) => {
@@ -94,10 +95,10 @@ export const getSuggestedUsers = async (req, res) => {
 export const updateUser = async (req, res) => {
     const { fullName, email, userName, currentPassword, newPassword, bio, link } = req.body;
     let { profileImage, coverImage } = req.body;
-    const userId = req.body;
+    const userId  = req.user._id;
     
     try {
-        const user = await User.findById(userId);
+        let user = await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -138,7 +139,7 @@ export const updateUser = async (req, res) => {
             }
 
             const uploadedResponse = await cloudinary.uploader.upload(coverImage);
-            profileImage = uploadedResponse.secure_url;
+            coverImage = uploadedResponse.secure_url;
         }
 
         user.fullName = fullName || user.fullName;
@@ -156,6 +157,7 @@ export const updateUser = async (req, res) => {
         return res.status(200).json({ message: 'User updated successfully', data: user });
         
     } catch (error) {
-        
+        console.log(`error in updateUser controller: ${error.message}`);
+        errorHandler(error, res);
     }
 }
