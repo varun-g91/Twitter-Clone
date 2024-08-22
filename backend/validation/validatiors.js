@@ -19,7 +19,6 @@ export function validateLogin(identifier, password) {
 
 
 export const validatePassword = (password) => {
-    console.log(password);
     const minLength = 8;
     const hasUpperCase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
