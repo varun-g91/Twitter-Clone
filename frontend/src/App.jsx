@@ -1,8 +1,6 @@
 
 import { Routes, Route } from "react-router-dom";
 import './index.css';
-import SignupPage from './Pages/auth/signup/SignupPage'
-import LoginPage from './Pages/auth/login/LoginPage'
 import Footer from "./components/common/Footer";
 import LandingPage from "./Pages/landing/LandingPage";
 
