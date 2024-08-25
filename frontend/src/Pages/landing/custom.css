@@ -1,0 +1,48 @@
+.font-stretched1 {
+    font-stretch: expanded;
+    font-size: 3.9rem;
+    /* line-height: 1.2; */
+    transform: scaleX(1.17) scaleY(0.999999);   
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.text {
+    word-wrap: break-word;
+}
+
+.font-stretched2 {
+    font-stretch: expanded;
+    font-size: 1.9rem;
+    /* line-height: 1.2; */
+    transform: scaleX(1.17) scaleY(0.89);   
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+
+
+/* custom.css */
+
+/* Flex container setup for the overall layout */
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    padding: 0 2rem;
+}
+#text-and-buttons {
+    flex-grow: 1;
+    max-width: 75%;
+    align-self: self-end;
+    padding-right: 1rem;
+    margin-top: 5%;
+    line-height: normal;
+}
+.logo-class {
+    margin-right: 1rem;
+    align-self: flex-end;
+}
+
