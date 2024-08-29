@@ -5,8 +5,8 @@
 @font-face {
     font-family: 'Chirp';
     src: url('./assets/fonts/Chirp.otf') format('opentype');
-    font-weight: 50;
-    font-style: normal;
+    /* font-weight: 50; */
+    font-style: light;
 }
 
 @layer {
