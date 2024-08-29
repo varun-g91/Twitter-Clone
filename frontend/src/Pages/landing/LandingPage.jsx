@@ -1,10 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import XSvg from '../../components/svgs/X';
 import GoogleIcon from '../../components/svgs/GoogleIcon';
 import AppleIcon from '../../components/svgs/AppleIcon';
 import { Link } from 'react-router-dom';
+import SignupModal from '../../components/common/SignupModal';
+import '../../custom.css'
 
 const LandingPage = () => {
+    const [isModalOpen, setIsOpenModal] = useState(false);
+
+    const openModal = () => {
+        setIsOpenModal(true);
+    };
+
+    const closeModal = () => {
+        setIsOpenModal(false);
+    };
   return (
       <div className="container max-w-screen-2xl md:justify-center flex flex-row-reverse h-screen flex-grow-[1] flex-shrink-[1] basis-auto items-stretch box-border m-0 p-0 min-w-0 relative overflow-hidden">
           <div className="min-w-[45vw] flex flex-col flex-grow-[1] flex-shrink-[1] basis-auto box-border items-stretch justify-center min-h-0 p-4 relative">
@@ -54,7 +65,10 @@ const LandingPage = () => {
                       </div>
 
                       <div className="mb-2 max-w-[23.75rem] w-[18.75rem] h-[2.5rem] basis-auto flex flex-col items-stretch min-h-0 min-w-0 ">
-                          <button className="flex items-center justify-center w-full px-4 py-2 bg-[#139BF0] rounded-full">
+                          <button
+                              className="flex items-center justify-center w-full px-4 py-2 bg-[#139BF0] rounded-full"
+                              onClick={openModal}
+                          >
                               <p className="text-white font-semibold ml-2">
                                   Create account
                               </p>
@@ -97,6 +111,8 @@ const LandingPage = () => {
                   <XSvg className="max-h-[27.725rem] scale-[1.1] max-w-[100%] p-8 relative inline-block overflow-hidden justify-center h-1/2 fill-[#e7e9ea]" />
               </div>
           </div>
+
+          {isModalOpen && <SignupModal isOpen={isModalOpen} onClose={closeModal} />}
       </div>
   );
 }
