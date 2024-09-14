@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
     fullName: {
@@ -7,17 +7,35 @@ const userSchema = new mongoose.Schema({
     },
     userName: {
         type: String,
-        required: [true, 'Username is required'],
         unique: true,
+        sparse: true, // Allows null initially, set after verification
+    },
+    dateOfBirth: {
+        type: Date,
+        required: [true, 'Date of birth is required'],
     },
     email: {
         type: String,
-        required: [true, 'Email is required'],
         unique: true,
+        sparse: true, // Allows null if phone is used for signup
+    },
+    phone: {
+        type: String,
+        unique: true,
+        sparse: true, // Allows null if email is used for signup
     },
     password: {
         type: String,
-        required: [true, 'Password is required']
+    },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    verificationCode: {
+        type: String,
+    },
+    verificationCodeExpires: {
+        type: Date,
     },
     followers: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -48,8 +66,8 @@ const userSchema = new mongoose.Schema({
         ref: 'Post',
         default: [],
     }]
-}, {timestamps: true});
+}, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 
-export default User; 
+export default User;

@@ -1,6 +1,6 @@
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import { errorHandler } from "../middleware/errorHandler.js";
+import errorHandler from "../middleware/errorHandler.js";
 import cloudinary from 'cloudinary';
 import Notification from "../models/notification.model.js";
 

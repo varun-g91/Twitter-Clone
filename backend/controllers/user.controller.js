@@ -1,8 +1,8 @@
 import User from "../models/user.model.js";
-import { errorHandler } from "../middleware/errorHandler.js";
+import errorHandler from "../middleware/errorHandler.js";
 import Notification from "../models/notification.model.js";
-import { validatePassword } from "../validation/validatiors.js";
-import bcrypt from "bcryptjs/dist/bcrypt.js";
+import { validatePassword } from "../middleware/validatiors.js";
+import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 
 export const getUserProfile = async (req, res) => {

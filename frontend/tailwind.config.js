@@ -6,9 +6,11 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        custom: ['Chirp', 'sans-serif'],
-      }
+        custom: ['Chirp-heavy', 'sans-serif'],
+        custom2: ['Chirp-regular', 'sans-serif'],
+      } 
     },
+    
   },
   plugins: [daisyui],
 

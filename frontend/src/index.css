@@ -3,14 +3,11 @@
 @tailwind utilities;
 
 @font-face {
-    font-family: 'Chirp';
-    src: url('./assets/fonts/Chirp.otf') format('opentype');
-    /* font-weight: 50; */
-    font-style: light;
+    font-family: 'Chirp-heavy';
+    src: url('./assets/fonts/Chirp-heavy.otf') format('opentype');
 }
 
-@layer {
-    .font-stretched {
-        font-stretch: expanded;
-    }
+@font-face {
+    font-family: 'Chirp-regular';
+    src: url('./assets/fonts/Chirp-regular.otf') format('opentype');
 }

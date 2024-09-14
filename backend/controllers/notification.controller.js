@@ -1,4 +1,4 @@
-import { errorHandler } from "../middleware/errorHandler.js ";
+import errorHandler from "../middleware/errorHandler.js ";
 import Notification from "../models/notification.model.js";
 
 export const getNotifications = async (req, res) => {
