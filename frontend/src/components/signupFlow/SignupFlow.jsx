@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import ModalBase from "./ModalBase";
+import axios from "axios";
+import ModalBase from "./components/ModalBase.jsx";
 import Step1Content from "./steps/Step1Content";
 import Step2Content from "./steps/Step2Content";
 import Step3Content from "./steps/Step3Content";
-import { submitSignup, submitVerification, submitPassword } from "./utils/apiCalls.js";
-import { handleApiError, handleSuccess } from "./utils/apiHelpers.js";
-import Spinner from '../common'
 
 
 const SignupFlow = ({ isOpen, onClose }) => {
@@ -28,6 +26,15 @@ const SignupFlow = ({ isOpen, onClose }) => {
     const verificationCodeInputRef = useRef(null);
     const passwordInputRef = useRef(null);
 
+    
+
+    const togglePlaceholder = () => {
+        setPlaceholder((prev) => (prev === "Phone" ? "Email" : "Phone"));
+        setIdentifier("");
+        setErrorMessage("");
+    };
+
+    // Validate identifier based on type (phone/email)
     const validateIdentifier = (value) => {
         if (placeholder === "Phone") {
             const phonePattern = /^\+?[1-9]\d{1,14}$/;
@@ -46,18 +53,14 @@ const SignupFlow = ({ isOpen, onClose }) => {
         }
     };
 
-    const togglePlaceholder = () => {
-        setPlaceholder((prev) => (prev === "Phone" ? "Email" : "Phone"));
-        setIdentifier("");
-        setErrorMessage("");
-    };
-
+    // Handle input change for identifier
     const handleInputChange = (e) => {
         const value = e.target.value;
         setIdentifier(value);
         validateIdentifier(value);
     };
 
+    // Handle form submission for Step 1 (Signup)
     const handleSubmitStep1 = async (e) => {
         e.preventDefault();
         if (
@@ -72,70 +75,191 @@ const SignupFlow = ({ isOpen, onClose }) => {
         }
 
         try {
-            const response = await submitSignup(
-                name,
-                identifier,
-                selectedMonth,
-                selectedDay,
-                selectedYear
+            const response = await axios.post(
+                "http://localhost:5005/api/auth/signup",
+                {
+                    fullName: name,
+                    identifier, // Can be either phone or email
+                    dateOfBirth: `${selectedYear}-${selectedMonth}-${selectedDay}`,
+                }
             );
-            handleSuccess(response, setVerificationToken, setStep);
+
+            if (response.data.message.includes("successfully")) {
+                setErrorMessage("");
+                setVerificationToken(response.data.verificationToken);
+                console.log(
+                    "Verification token:",
+                    response.data.verificationToken
+                );
+                setStep(2); // Move to Step 2 (Verification)
+            } else {
+                setErrorMessage(response.data.message || "Signup failed.");
+            }
         } catch (error) {
-            handleApiError(error, setErrorMessage);
+            console.error("Signup error:", error);
+            setErrorMessage(
+                error.response?.data?.message ||
+                    "An error occurred during signup."
+            );
         }
     };
 
+    // Handle verification code submission for Step 2
     const handleSubmitStep2 = async () => {
         if (verificationCode.length !== 6) {
             setErrorMessage("The verification code must be 6 digits.");
             return;
         }
 
+        const token = verificationToken;
+
         try {
             setIsVerifying(true);
-            const response = await submitVerification(
-                identifier,
-                verificationCode,
-                verificationToken
+            const response = await axios.post(
+                "http://localhost:5005/api/auth/verify",
+                {
+                    identifier,
+                    verificationCode,
+                    verificationToken: token,
+                }
             );
-            handleSuccess(response, () => setStep(3));
+
+            if (response.data.message.includes("successfully")) {
+                setStep(3); // Close the modal upon successful verification
+            } else {
+                setErrorMessage(
+                    response.data.message || "Verification failed."
+                );
+            }
         } catch (error) {
-            handleApiError(error, setErrorMessage);
+            console.error("Verification error:", error);
+            setErrorMessage(
+                error.response?.data?.message ||
+                    "An error occurred during verification."
+            );
         } finally {
             setIsVerifying(false);
         }
     };
 
+    // Handle password submission for Step 3
     const handleSubmitStep3 = async () => {
-        if (!password || password.length < 8) {
-            setErrorMessage(
-                "Your password needs to be at least 8 characters long."
-            );
+        if (!password) {
+            setErrorMessage("Please enter a password.");
             return;
         }
 
         try {
-            const response = await submitPassword(identifier, password);
-            handleSuccess(response, () => setStep(4));
+            if (password.length < 8) {
+                setErrorMessage(
+                    "Your password needs to be at least 8 characters. Please enter a longer one."
+                );
+                return;
+            }
+
+            const response = await axios.post(
+                "http://localhost:5005/api/auth/set-password",
+                { identifier, password }
+            );
+
+            console.log("Password set response:", response); // Log the full response
+
+            if (response.data.message.includes("successfully")) {
+                setStep(4); // Move to Step 4 (Profile Setup)
+            } else if (response.data.message.includes("stronger password")) {
+                setErrorMessage(
+                    response.data.message || "Please choose a stronger password."
+                );
+            } else {
+                setErrorMessage("An unexpected error occurred.");
+            }
         } catch (error) {
-            handleApiError(error, setErrorMessage);
+            console.error("Error in password submission:", error); // Log the full error
+            setErrorMessage(
+                error.response?.data?.message ||
+                    "An error occurred during password submission."
+            );
+        }
+
+
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            const inputRef =
+                step === 1
+                    ? nameInputRef
+                    : step === 2
+                    ? verificationCodeInputRef
+                    : null;
+            if (inputRef && inputRef.current) {
+                const timer = setTimeout(() => inputRef.current.focus(), 300);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [isOpen, step]);
+
+    const getSubmitStep = () => {
+        switch (step) {
+            case 1:
+                return handleSubmitStep1;
+            case 2:
+                return handleSubmitStep2;
+            case 3:
+                return handleSubmitStep3;
+            // case 4:
+            //     return handleSubmitStep4;
+            default:
+                return undefined;
         }
     };
 
-     const getTitle = () => {
-         switch (step) {
-             case 1:
-                 return "Create your account";
-             case 2:
-                 return "We sent you a code";
-             case 3:
-                 return "You'll need a password";
-             case 4:
-                 return "Complete profile setup";
-             default:
-                 return "Signup";
-         }
-     };
+    const getButtonCondition = () => {
+        switch (step) {
+            case 1:
+                return (
+                    name &&
+                    identifier &&
+                    selectedMonth &&
+                    selectedDay &&
+                    selectedYear
+                );
+            case 2:
+                return verificationCode.length === 6;
+            case 3:
+                return password.length >= 8;
+            default:
+                return false;
+        }
+    };
+
+    const getButtonText = () => {
+        switch (step) {
+            case 1:
+                return "Next";
+            case 2:
+                return "Next";
+            case 3:
+                return "Sign up";
+            default:
+                return "Next";
+        }
+    };
+
+    const getTitle = () => {
+        switch (step) {
+            case 1:
+                return "Create your account";
+            case 2:
+                return "We sent you a code";
+            case 3:
+                return "You'll need a password";
+            case 4:
+                return "Complete profile setup";
+            default:
+                return "Signup";
+        }
+    };
 
     const renderStepContent = () => {
         switch (step) {
@@ -145,6 +269,7 @@ const SignupFlow = ({ isOpen, onClose }) => {
                         name={name}
                         identifier={identifier}
                         placeholder={placeholder}
+                        setErrorMessage={setErrorMessage}
                         errorMessage={errorMessage}
                         selectedMonth={selectedMonth}
                         selectedDay={selectedDay}
@@ -165,6 +290,7 @@ const SignupFlow = ({ isOpen, onClose }) => {
                         identifier={identifier}
                         verificationCode={verificationCode}
                         errorMessage={errorMessage}
+                        setErrorMessage={setErrorMessage}
                         handleInputChange={setVerificationCode}
                         handleSubmitStep2={handleSubmitStep2}
                         openDropdown={() => setDropdownOpen(true)}
@@ -185,6 +311,8 @@ const SignupFlow = ({ isOpen, onClose }) => {
                         passwordInputRef={passwordInputRef}
                     />
                 );
+            case 4:
+                return <Step4Content />;
             default:
                 return null;
         }
@@ -197,7 +325,14 @@ const SignupFlow = ({ isOpen, onClose }) => {
     }, [isOpen]);
 
     return (
-        <ModalBase isOpen={isOpen} onClose={onClose} title={getTitle()}>
+        <ModalBase
+            isOpen={isOpen}
+            onClose={onClose}
+            title={getTitle()}
+            buttonCondition={getButtonCondition()}
+            handleSubmitStepX={getSubmitStep()} 
+            buttonText={getButtonText()}
+        >
             {renderStepContent()}
         </ModalBase>
     );

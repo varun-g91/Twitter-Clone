@@ -1,8 +1,8 @@
 .font-stretched1 {
     font-stretch: expanded;
-    font-size: 3.9rem;
-    /* line-height: 1.2; */
-    transform: scaleX(1.17) scaleY(0.999999);   
+    /* font-size: 3.9rem;  */
+    line-height: 36px;
+    transform: scaleX(1.06) scaleY(0.999999);   
     text-rendering: geometricPrecision;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -10,6 +10,14 @@
 
 .text {
     word-wrap: break-word;
+}
+
+.font-compact {
+    font-stretch: extra-condensed;
+    transform: scaleX(0.99) scaleY(1.07); /* Slightly condense the width */
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .font-stretched2 {

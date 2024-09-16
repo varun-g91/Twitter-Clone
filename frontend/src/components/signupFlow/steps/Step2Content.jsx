@@ -1,11 +1,12 @@
 import React from "react";
-import InputField from "../InputField";
-import ResendDropdown from "../ResendDropdown";
+import InputField from "../components/InputField";
+import ResendDropdown from "../components/ResendDropdown";
 
 const Step2Content = ({
     identifier,
     verificationCode,
     errorMessage,
+    setErrorMessage,
     handleInputChange,
     handleSubmitStep2,
     openDropdown,
@@ -13,15 +14,17 @@ const Step2Content = ({
     dropdownOpen,
     verificationCodeInputRef,
 }) => {
+    const isStep2Complete = verificationCode.length === 6;
+
     return (
-        <>
-            <div className="flex flex-col basis-auto items-stretch flex-shrink-0 box-border relative p-0 justify-center font-custom leading-[2.25rem] max-w-[27.5rem] text-[1.938rem] text m-w-0 w-full h-full max-h-[4.75rem]">
-                <div className="my-5 flex flex-col basis-auto items-stretch flex-shrink-0 box-border relative justify-center top-11">
-                    <div className="font-custom2 font-extralight text-[0.94rem] text text-[#71767B] inline-block ">
+        <div className="flex flex-col items-stretch justify-center w-full h-full max-w-[27.5rem] mx-auto">
+            <div className="flex flex-col items-stretch justify-center">
+                <div className="relative bottom-6">
+                    <div className="text-[0.949rem] mt-4 relative bottom-[0.3rem] leading-5 text-[#71767B] ">
                         <span>Enter it below to verify&nbsp;</span>
                         <span>{identifier || "your email"}.</span>
                     </div>
-                    <div className="py-3 input-container font-custom2">
+                    <div className="py-3 w-full flex flex-col">
                         <InputField
                             id="verification-code"
                             type="text"
@@ -32,52 +35,35 @@ const Step2Content = ({
                             inputRef={verificationCodeInputRef}
                             label="Verification Code"
                         />
-                        <button
-                            className="text-[#1d9bf0] font-sans flex justify-start text-[0.8rem] relative bottom-5 text hover:underline"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                openDropdown();
-                            }}
-                            type="button"
-                        >
-                            {identifier.includes("@")
-                                ? "Didn't receive email?"
-                                : "Didn't receive SMS?"}
-                        </button>
-                    </div>
-                    <ResendDropdown
-                        dropdownOpen={dropdownOpen}
-                        identifier={identifier}
-                        verificationCode={verificationCode}
-                        closeDropdown={closeDropdown}
-                        setErrorMessage={setErrorMessage}
-                    />
-                    {errorMessage && (
-                        <div className="text-red-500 text-sm mt-2">
-                            {errorMessage}
-                        </div>
-                    )}
-                    <div className="flex flex-col items-stretch justify-center flex-shrink-0 box-border relative mt-20 top-[14.9rem] font-sans text-sm">
-                        {verificationCode.length !== 6 ? (
-                            <button className="bg-[#787a7a] h-[3.25rem] rounded-full">
-                                <span className="text-[#0f1419] font-bold text whitespace-nowrap text-[1.063rem]">
-                                    Next
-                                </span>
-                            </button>
-                        ) : (
+                        <div className="ml-2 relative bottom-[0.6rem] font-thin font-custom2 text-[0.8rem] ">
                             <button
-                                className="bg-[#D7DBDC] h-[3.25rem] rounded-full"
-                                onClick={handleSubmitStep2}
+                                className="text-[#1d9bf0] hover:underline"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    openDropdown();
+                                }}
+                                type="button"
                             >
-                                <span className="text-[#0f1419] font-bold text whitespace-nowrap text-[1.063rem]">
-                                    Next
-                                </span>
+                                {identifier.includes("@")
+                                    ? "Didn't receive email?"
+                                    : "Didn't receive SMS?"}
                             </button>
-                        )}
+                            <div className="text-red-500 text-xs mt-2 mb-[11rem]">
+                                {verificationCode.length === 6 ? errorMessage : undefined}{" "}
+                                {/* Keeps height consistent */}
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <ResendDropdown
+                    dropdownOpen={dropdownOpen}
+                    identifier={identifier}
+                    verificationCode={verificationCode}
+                    closeDropdown={closeDropdown}
+                    setErrorMessage={setErrorMessage}
+                />
             </div>
-        </>
+        </div>
     );
 };
 

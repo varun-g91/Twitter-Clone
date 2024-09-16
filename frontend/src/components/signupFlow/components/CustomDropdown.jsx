@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoChevronDownSharp } from "react-icons/io5";
-import "../../custom.css";
+import "../../../custom.css";
 
 const CustomDropdown = ({
     options,
@@ -75,18 +75,23 @@ const CustomDropdown = ({
                 />
             </div>
             {isSelectorFocused && (
-                <div className="custom-dropdown-options cursor-pointer">
+                <div
+                    className="custom-dropdown-options cursor-pointer absolute bg-white border border-[#333630] rounded-md mt-1 max-h-60 overflow-y-auto z-10"
+                    style={{ width }}
+                >
                     {options.map((option) => (
-                        <option
+                        <div
                             key={option}
-                            className=""
+                            className="py-2 px-3 hover:bg-[#139BF0] hover:text-white"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleOptionClick(e);
+                                handleOptionClick({
+                                    target: { value: option },
+                                });
                             }}
                         >
                             {option}
-                        </option>
+                        </div>
                     ))}
                 </div>
             )}
