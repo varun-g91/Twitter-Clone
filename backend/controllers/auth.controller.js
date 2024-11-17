@@ -1,18 +1,18 @@
-import { 
-    createUser, 
-    findUserByEmailOrPhone, 
+import {
+    createUser,
+    findUserByEmailOrPhone,
 } from '../services/userService.js';
 import sendEmail from '../services/emailService.js';
 import { v4 as uuidv4 } from 'uuid';
 import sendVerificationSMS from '../services/smsService.js';
-import { validateFullName, validateDateOfBirth, validateEmailOrPhone, validatePassword, validateVerificationCode } from '../middleware/validatiors.js';
+import { validateFullName, validateDateOfBirth, validateEmailOrPhone, validateLogin, validatePassword, validateVerificationCode } from '../middleware/validatiors.js';
 import { generateTokenAndSetCookie } from '../utils/generateToken.js';
 import errorHandler from '../middleware/errorHandler.js';
 import generateVerificationCode from "../utils/generateVerificationCode.js";
 import bcrypt from 'bcrypt';
 import User from '../models/user.model.js';
 import AppError from '../utils/AppError.js';
-import Redis from 'redis'; 
+import Redis from 'redis';
 
 // Initialize Redis client
 const redisClient = Redis.createClient({
@@ -48,6 +48,7 @@ export const signup = async (req, res) => {
         const verificationToken = uuidv4(); // Temporary token for verification
         const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins expiry
 
+
         // Store the data temporarily in Redis (use 'EX' to set the expiry time in seconds)
         await redisClient.set(
             verificationToken, // Key is the token
@@ -81,8 +82,6 @@ export const verifySignup = async (req, res) => {
     try {
         const { identifier, verificationCode, verificationToken } = req.body;
 
-        validateEmailOrPhone(identifier);
-
         // Retrieve user data from Redis using the token
         const userData = await redisClient.get(verificationToken);
         if (!userData) {
@@ -91,19 +90,15 @@ export const verifySignup = async (req, res) => {
 
         const parsedUserData = JSON.parse(userData);
 
-        // Check if the verification code matches and has not expired
-        const isVerificationCodeValid = validateVerificationCode(parsedUserData.verificationCode, verificationCode, parsedUserData.verificationCodeExpires);
-        if (!isVerificationCodeValid) {
-            return res.status(400).json({ message: 'Invalid or expired verification code.' });
+        // Validate the verification code
+        try {
+            validateVerificationCode(parsedUserData.verificationCode, verificationCode, parsedUserData.verificationCodeExpires);
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
+            throw error; // Re-throw if it's not an AppError
         }
-
-        console.log({
-            fullName: parsedUserData.fullName,
-            email: parsedUserData.identifier,
-            dateOfBirth: new Date(parsedUserData.dateOfBirth),
-            isVerified: true,
-        });
-
 
         // Save the user to the database after successful verification
         const newUser = await createUser({
@@ -121,49 +116,50 @@ export const verifySignup = async (req, res) => {
     }
 };
 
+// Function to resend the verification code
 export const resendVerificationCode = async (req, res) => {
     try {
-        const { identifier } = req.body;
+        console.log('Called resendVerificationCode controller. Request body:', req.body);
+        const { verificationToken } = req.body;
 
-        // Validate the identifier (email/phone)
-        validateEmailOrPhone(identifier);
-
-        // Find the user by email or phone
-        const user = await User.findOne({
-            $or: [{ email: identifier }, { phone: identifier }]
-        });
-
-        if (!user) {
-            return res.status(400).json({ message: 'User not found.' });
+        // Retrieve user data from Redis using the token
+        const userData = await redisClient.get(verificationToken);
+        if (!userData) {
+            return res.status(404).json({ message: 'User data not found in Redis. Verification token may have expired.' });
         }
 
-        if (user.isVerified) {
-            return res.status(400).json({ message: 'User is already verified.' });
-        }
+        // Parse the user data from Redis
+        const parsedUserData = JSON.parse(userData);
 
-        // Generate a new verification code
+        // Generate new verification code
         const newVerificationCode = generateVerificationCode();
-        const newVerificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+        const newVerificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // Code expires in 10 minutes
 
-        // Update the user with the new code and expiration
-        user.verificationCode = newVerificationCode;
-        user.verificationCodeExpires = newVerificationCodeExpires;
-        await user.save();
+        // Update Redis cache with new verification code and expiration
+        parsedUserData.verificationCode = newVerificationCode;
+        parsedUserData.verificationCodeExpires = newVerificationCodeExpires;
 
-        // Resend the verification code via the appropriate channel
-        if (user.phone) {
-            await sendVerificationSMS(user.phone, newVerificationCode);
-        } else if (user.email) {
-            await sendEmail(user.email, newVerificationCode);
+        // Save updated data back to Redis
+        await redisClient.set(verificationToken, JSON.stringify(parsedUserData), 'EX', 10 * 60); // 10 min expiry
+
+        // Send verification code via SMS or email
+        if (parsedUserData.identifier.startsWith('+')) {
+            await sendVerificationSMS(parsedUserData.identifier, newVerificationCode);
+        } else {
+            await sendEmail(parsedUserData.identifier, newVerificationCode);
         }
 
-        res.status(200).json({ message: 'Verification code resent successfully.' });
-
+        // Send success response
+        return res.status(200).json({ message: 'Verification code resent successfully.' });
     } catch (error) {
-        console.error(`error in resendVerificationCode controller: ${error.message}`);
-        errorHandler(error, res);
+        console.error(`Error in resendVerificationCode controller: ${error.message}`);
+        return res.status(500).json({
+            message: 'An error occurred while trying to resend the verification code.',
+            error: error.message // Optionally include error details for debugging
+        });
     }
 };
+
 
 export const setPassword = async (req, res) => {
     try {
