@@ -44,9 +44,8 @@ export const validatePassword = (password) => {
     const minLength = 8;
     const hasUpperCase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|_<>]/.test(password);
 
-    if (password.length < minLength || !hasUpperCase || !hasNumber || !hasSpecialChar) {
+    if (password.length < minLength || !hasUpperCase || !hasNumber) {
         throw new AppError('Please choose a stronger password');
     }
 
@@ -64,11 +63,11 @@ export function validateVerificationCode(storedCode, providedCode, expirationDat
     const expiryDate = new Date(expirationDate);
 
     if (Date.now() > expiryDate.getTime()) {
-        throw new AppError('Verification code has expired.');
+        throw new AppError('Verification code has expired.', 400); // Passing status code with AppError
     }
 
     if (storedCode !== providedCode) {
-        throw new AppError('Invalid verification code.');
+        throw new AppError('Invalid verification code.', 400); // Passing status code with AppError
     }
 
     return true;
