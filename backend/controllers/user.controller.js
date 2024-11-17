@@ -3,7 +3,11 @@ import errorHandler from "../middleware/errorHandler.js";
 import Notification from "../models/notification.model.js";
 import { validatePassword } from "../middleware/validatiors.js";
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
+import generateUsernameSuggestions from "../utils/generateUsernameSuggestions.js";
+
+dotenv.config();
 
 export const getUserProfile = async (req, res) => {
     const { userName } = req.params;
@@ -18,6 +22,85 @@ export const getUserProfile = async (req, res) => {
         console.log(`error in getUserProfile controller: ${error.message}`);
         errorHandler(error, res);
     }
+}
+
+export const updateUserProfileImage = async (req, res) => {
+    try {
+        const { identifier } = req.params;
+
+        // Check if a file was uploaded
+        if (!req.files || Object.keys(req.files).length === 0) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Get the uploaded file
+        const profileImage = req.files.profileImage;
+
+        // Find the user
+        const user = await User.findOne({
+            $or: [{ email: identifier }, { userName: identifier }],
+        });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Cloudinary config
+        cloudinary.config({
+            cloud_name: process.env.ClOUDINARY_CLOUD_NAME,
+            api_key: process.env.ClOUDINARY_API_KEY,
+            api_secret: process.env.ClOUDINARY_API_SECRET
+        });
+
+        // Upload the image to Cloudinary
+        const uploadedResponse = await cloudinary.uploader.upload(profileImage.tempFilePath, {
+            folder: 'profile_images',
+            resource_type: 'image',
+        });
+
+        // Update the user's profile image
+        user.profileImage = uploadedResponse.secure_url;
+        await user.save();
+
+        res.status(200).json({
+            message: 'Profile picture updated successfully',
+            profileImage: user.profileImage
+        });
+    } catch (error) {
+        console.error(`Error in updateUserProfileImage controller:`, error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getSuggestedUsernames = async (req, res) => {
+    try {
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({
+                message: 'Name is required'
+            });
+        }
+
+        const suggestions = await generateUsernameSuggestions(name);
+
+        res.json({
+            success: true,
+            suggestions
+        });
+    } catch (error) {
+        console.error('Username generation error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to generate username suggestions'
+        });
+    }
+};
+
+export const setUsername = async (req, res) => {
+    const { userName, identifier } = req.body;
+
+    
+
 }
 
 export const followUnfollowUser = async (req, res) => {
