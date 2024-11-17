@@ -1,0 +1,99 @@
+/* Ensure the ImageEditor container fits within the modal */
+.image-editor-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    overflow: auto; /* Ensure overflowing content is still accessible */
+}
+
+
+/* Header of the editor */
+/* .image-editor-header {
+    flex-shrink: 0;
+    padding: 10px;
+    text-align: center;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+} */
+
+/* Main workspace for the image editor */
+.image-editor-workspace {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    overflow: hidden;
+    position: relative;
+    bottom: 20rem;
+    z-index: 50;
+}
+
+/* Image cropping and preview area */
+.cropped-image-preview img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 10px;
+}
+
+/* Controls for zoom and cropping */
+.image-editor-controls {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #ddd;
+}
+
+.zoom-slider {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.zoom-slider label {
+    margin-right: 10px;
+}
+
+.zoom-slider input {
+    flex: 1;
+}
+
+/* Crop buttons */
+.crop-buttons {
+    display: flex;
+    justify-content: space-between;
+    background: #f9f9f9; /* Change this to a light background for now */
+    padding: 10px 15px;
+    margin-top: 10px;
+}
+
+
+.crop-buttons button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.crop-buttons button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .image-editor-workspace {
+        height: 60%;
+    }
+
+    .cropped-image-preview img {
+        max-width: 90%;
+    }
+}
