@@ -1,9 +1,10 @@
 import React from 'react'
+import '../../custom.css';
 
 const HeaderText = () => {
   return (
       <>
-          <div className="font-stretched1 leading-[5.25rem] tracking-[-0.075rem] text-[4.1rem] text font-custom font-bold min-w-0 my-[3rem] box-border inline relative whitespace-pre-wrap">
+          <div className="leading-[5.25rem] tracking-[-0.075rem] text-[4.1rem] text font-custom font-bold min-w-0 my-[3rem] box-border inline relative right-12 whitespace-pre-wrap">
               <span className="text min-w-0 box-border relative inline">
                   Happening now
               </span>
