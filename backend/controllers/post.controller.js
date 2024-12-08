@@ -1,6 +1,6 @@
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import errorHandler from "../middleware/errorHandler.js";
+import errorHandler from "../middleware/globalErrorHandler.js";
 import cloudinary from 'cloudinary';
 import Notification from "../models/notification.model.js";
 
@@ -39,7 +39,8 @@ export const createPost = async (req, res) => {
 
     } catch (error) {
         console.log(`error in createPost controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
@@ -65,7 +66,8 @@ export const deletePost = async (req, res) => {
         res.status(200).json({ message: 'Post deleted successfully' });
     } catch (error) {
         console.log(`error in deletePost controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
@@ -95,7 +97,8 @@ export const commentOnPost = async (req, res) => {
 
     } catch (error) {
         console.log(`error in commentOnPost controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
@@ -134,7 +137,8 @@ export const likeUnlikePost = async (req, res) => {
         }
     } catch (error) {
         console.log(`error in likeUnlikePost controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
@@ -159,7 +163,8 @@ export const getAllPosts = async (req, res) => {
         res.status(200).json({ message: 'Posts fetched successfully', posts: posts, count: posts.length });
     } catch (error) {
         console.log(`error in getAllPosts controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
@@ -186,7 +191,8 @@ export const getLikedPosts = async (req, res) => {
         res.status(200).json(likedPosts);
     } catch (error) {
         console.log(`error in getLikedPosts controller: ${error.message}`);
-        errorHandler(error, res);   
+        // errorHandler(error, res);   
+        next(error);
     }
 }
 
@@ -215,7 +221,8 @@ export const getFollowingPosts = async (req, res) => {
         res.status(200).json({ data: followingPosts, count: followingPosts.length });
     } catch (error) {
         console.log(`error in getFollowingPosts controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
@@ -244,6 +251,7 @@ export const getUserPosts = async (req, res) => {
         
     } catch (error) {
         console.log(`error in getUserPosts controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }

@@ -1,4 +1,5 @@
 import AppError from "../utils/AppError.js";
+
 export const validateFullName = (fullName) => {
     if (!fullName || fullName.trim().length < 2) {
         throw new AppError('Full name must be at least 2 characters long');
@@ -6,7 +7,7 @@ export const validateFullName = (fullName) => {
 };
 
 export const validateDateOfBirth = (dob) => {
-    const date = dob
+    const date = dob;
     if (isNaN(date.getTime())) {
         throw new AppError('Invalid date of birth');
     }
@@ -19,9 +20,8 @@ export const validateDateOfBirth = (dob) => {
 };
 
 export const validateEmailOrPhone = (identifier) => {
-    console.log(identifier);
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phonePattern = /^\+?[1-9]\d{1,14}$/;  // E.164 format for international phone numbers
+    const phonePattern = /^\+?[1-9]\d{1,14}$/;
 
     if (!emailPattern.test(identifier) && !phonePattern.test(identifier)) {
         throw new AppError('Invalid email or phone number.');
@@ -33,12 +33,10 @@ export function validateLogin(identifier, password) {
         throw new AppError('Please provide both identifier and password');
     }
 
-    // Additional validation can be added here, such as checking the format of the email, etc.
     if (typeof identifier !== 'string' || typeof password !== 'string') {
         throw new AppError('Invalid input type');
     }
 }
-
 
 export const validatePassword = (password) => {
     const minLength = 8;
@@ -46,31 +44,27 @@ export const validatePassword = (password) => {
     const hasNumber = /\d/.test(password);
 
     if (password.length < minLength || !hasUpperCase || !hasNumber) {
-        throw new AppError('Please choose a stronger password');
+        throw new AppError('Password must be at least 8 characters long and contain at least one uppercase letter and one number', 400);
     }
-
-}
+};
 
 export const validateUsername = (username) => {
     const usernameRegex = /^[a-zA-Z0-9_]{6,}$/;
     if (!usernameRegex.test(username)) {
         throw new AppError('Invalid username');
     }
-}
+};
 
 export function validateVerificationCode(storedCode, providedCode, expirationDate) {
-    // Ensure expirationDate is a Date object
     const expiryDate = new Date(expirationDate);
 
     if (Date.now() > expiryDate.getTime()) {
-        throw new AppError('Verification code has expired.', 400); // Passing status code with AppError
+        throw new AppError('Verification code has expired.', 400);
     }
 
     if (storedCode !== providedCode) {
-        throw new AppError('Invalid verification code.', 400); // Passing status code with AppError
+        throw new AppError('Invalid verification code.', 400);
     }
 
     return true;
 }
-
-

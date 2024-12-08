@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import sendVerificationSMS from '../services/smsService.js';
 import { validateFullName, validateDateOfBirth, validateEmailOrPhone, validateLogin, validatePassword, validateVerificationCode } from '../middleware/validatiors.js';
 import { generateTokenAndSetCookie } from '../utils/generateToken.js';
-import errorHandler from '../middleware/errorHandler.js';
+import errorHandler from '../middleware/globalErrorHandler.js';
 import generateVerificationCode from "../utils/generateVerificationCode.js";
 import bcrypt from 'bcrypt';
 import User from '../models/user.model.js';
@@ -26,7 +26,7 @@ redisClient.on('error', (err) => console.log('Redis Client Error', err));
 await redisClient.connect();
 
 // Updated signup controller
-export const signup = async (req, res) => {
+export const signup = async (req, res, next) => {
     try {
         const { fullName, identifier, dateOfBirth } = req.body;
 
@@ -37,11 +37,11 @@ export const signup = async (req, res) => {
         if (isNaN(parsedDateOfBirth.getTime())) {
             throw new AppError('Invalid date of birth');
         }
-        validateDateOfBirth(parsedDateOfBirth);
+        validateDateOfBirth(parsedDateOfBirth, next);
 
         const existingUser = await findUserByEmailOrPhone(identifier);
         if (existingUser) {
-            throw new AppError(`User with this ${identifier.includes('@') ? 'email' : 'phone'} already exists`);
+            return next(new AppError('User with this email already exists', 400));
         }
 
         const verificationCode = generateVerificationCode();
@@ -59,7 +59,7 @@ export const signup = async (req, res) => {
                 verificationCode,
                 verificationCodeExpires,
             }),
-            { EX: 600 } // Expiry time set to 600 seconds (10 minutes)
+            { EX: 600 } 
         );
 
         if (identifier.startsWith('+')) {
@@ -74,13 +74,18 @@ export const signup = async (req, res) => {
         });
     } catch (error) {
         console.log(`error in signup controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 };
 
-export const verifySignup = async (req, res) => {
+export const verifySignup = async (req, res, next) => {
     try {
-        const { identifier, verificationCode, verificationToken } = req.body;
+        const { verificationToken } = req.body;
+
+        if (!verificationToken) {
+            return res.status(400).json({ message: 'Verification token is required.' });
+        }
 
         // Retrieve user data from Redis using the token
         const userData = await redisClient.get(verificationToken);
@@ -92,7 +97,11 @@ export const verifySignup = async (req, res) => {
 
         // Validate the verification code
         try {
-            validateVerificationCode(parsedUserData.verificationCode, verificationCode, parsedUserData.verificationCodeExpires);
+            validateVerificationCode(
+                parsedUserData.verificationCode,
+                req.body.verificationCode, // The client still needs to send the entered code for comparison
+                parsedUserData.verificationCodeExpires,
+            );
         } catch (error) {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message });
@@ -103,21 +112,26 @@ export const verifySignup = async (req, res) => {
         // Save the user to the database after successful verification
         const newUser = await createUser({
             fullName: parsedUserData.fullName,
-            ...(identifier.includes('@') && { email: parsedUserData.identifier }),
-            ...(identifier.startsWith('+') && { phone: parsedUserData.identifier }),
+            ...(parsedUserData.identifier.includes('@') && { email: parsedUserData.identifier }),
+            ...(parsedUserData.identifier.startsWith('+') && { phone: parsedUserData.identifier }),
             dateOfBirth: new Date(parsedUserData.dateOfBirth),
             isVerified: true,
         });
 
+        // Cleanup: Remove the token from Redis after successful verification
+        await redisClient.del(verificationToken);
+
         res.status(200).json({ message: 'User verified successfully. Please login', user: newUser });
     } catch (error) {
         console.log(`error in verifySignup controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 };
 
+
 // Function to resend the verification code
-export const resendVerificationCode = async (req, res) => {
+export const resendVerificationCode = async (req, res, next) => {
     try {
         console.log('Called resendVerificationCode controller. Request body:', req.body);
         const { verificationToken } = req.body;
@@ -153,19 +167,14 @@ export const resendVerificationCode = async (req, res) => {
         return res.status(200).json({ message: 'Verification code resent successfully.' });
     } catch (error) {
         console.error(`Error in resendVerificationCode controller: ${error.message}`);
-        return res.status(500).json({
-            message: 'An error occurred while trying to resend the verification code.',
-            error: error.message // Optionally include error details for debugging
-        });
+        next(error);
     }
 };
 
 
-export const setPassword = async (req, res) => {
+export const setPassword = async (req, res, next) => {
     try {
         const { identifier, password } = req.body;
-
-        console.log(identifier, password);
 
         // Validate the identifier (email/phone)
         validateEmailOrPhone(identifier);
@@ -176,11 +185,11 @@ export const setPassword = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(400).json({ message: 'User not found.' });
+            return next(new AppError('User not found.', 400));
         }
 
         if (!user.isVerified) {
-            return res.status(400).json({ message: 'User has not been verified.' });
+            return next(new AppError('User has not been verified.', 400));
         }
 
         // Validate the new password
@@ -196,72 +205,101 @@ export const setPassword = async (req, res) => {
         res.status(200).json({ message: 'Password has been set successfully.' });
 
     } catch (error) {
-        console.error(`error in setPassword controller: ${error.message}`);
-        errorHandler(error, res);
+        next(error);
     }
 };
 
 
-export const login = async (req, res) => {
-
+export const login = async (req, res, next) => {
     try {
-        const { identifier, password } = req.body;
+        const { identifier, password, step } = req.body;
 
-        // Validate the login input
-        validateLogin(identifier, password);
+        // Step 1: Verify if the user exists (Identifier Check)
+        if (step === 1) {
+            // Find the user by either email or username
+            const user = await User.findOne({
+                $or: [{ email: identifier }, { userName: identifier }, { phone: identifier }],
+            });
 
-        // Find the user by either email or username
-        const user = await User.findOne({
-            $or: [{ email: identifier }, { userName: identifier }],
-        });
+            if (!user) {
+                return res.status(404).json({ status: 'error', message: 'User not found' });
+            }
 
-        // Handle case where user is not found
-        if (!user) {
-            return res.status(401).json({ status: 'error', message: 'User not found' });
+            // Respond with success to proceed to Step 2
+            return res.status(200).json({
+                status: 'success',
+                message: 'User found',
+                identifier: identifier,
+            });
         }
 
-        // Check if the password is correct
-        const isPasswordValid = await bcrypt.compare(password, user?.password || '');
-        if (!isPasswordValid) {
-            return res.status(401).json({ status: 'error', message: 'Invalid password' });
+        // Step 2: Validate the password
+        if (step === 2) {
+            // Ensure both identifier and password are provided
+            if (!identifier || !password) {
+                return res
+                    .status(400)
+                    .json({ status: 'error', message: 'Identifier and password are required' });
+            }
+
+            // Find the user again
+            const user = await User.findOne({
+                $or: [{ email: identifier }, { userName: identifier }, { phone: identifier }],
+            });
+
+            if (!user) {
+                return res.status(404).json({ status: 'error', message: 'User not found' });
+            }
+
+            // Check if the password is correct
+            const isPasswordValid = await bcrypt.compare(password, user?.password || '');
+            if (!isPasswordValid) {
+                console.log("Invalid password for user:", user?.email); 
+                return res.status(401).json({ status: 'error', message: 'Invalid password' });
+            }
+
+            // Generate token and set cookie
+            generateTokenAndSetCookie(user._id, res);
+
+            return res.status(200).json({
+                _id: user._id,
+                fullName: user.fullName,
+                userName: user.userName,
+                email: user.email,
+                followers: user.followers,
+                following: user.following,
+                profileImage: user.profileImage,
+                coverImage: user.coverImage,
+            });
         }
 
-        generateTokenAndSetCookie(user._id, res);
-
-        res.status(201).json({
-            _id: user._id,
-            fullName: user.fullName,
-            userName: user.userName,
-            email: user.email,
-            followers: user.followers,
-            following: user.following,
-            profileImage: user.profileImage,
-            coverImage: user.coverImage,
-        });
-
+        // If step is invalid, return error
+        return res.status(400).json({ status: 'error', message: 'Invalid step' });
     } catch (error) {
-        console.error('error at login controller:', error.message);
-        errorHandler(error, res);
+        console.error('Error at login controller:', error.message);
+        next(error);
     }
+};
 
-}
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
     try {
         res.cookie('jwt', '', { maxAge: 0 });
         res.status(200).json({ status: 'success', message: 'Logged out successfully' });
     } catch (error) {
         console.error(`error in logout controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
-export const getAuthenticatedUser = async (req, res) => {
+export const getAuthenticatedUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.user._id).select('-password');
         res.status(200).json(user);
     } catch (error) {
         console.log(`error in getAuthenticatedUser controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 

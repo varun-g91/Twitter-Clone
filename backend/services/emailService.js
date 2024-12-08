@@ -186,14 +186,13 @@ const sendEmail = async (email, OTP) => {
         }
 
         const mailOptions = {
-            from: `"Your App Name" <${process.env.OAUTH2_USER}>`,
+            from: `X <${process.env.OAUTH2_USER}>`,
             to: email,
             subject: `${OTP} is your verification code`,
             html: generateEmailTemplate(OTP)
         };
 
         const result = await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully:', result.messageId);
         return result;
 
     } catch (error) {

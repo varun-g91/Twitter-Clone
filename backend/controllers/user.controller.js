@@ -1,11 +1,10 @@
 import User from "../models/user.model.js";
-import errorHandler from "../middleware/errorHandler.js";
 import Notification from "../models/notification.model.js";
 import { validatePassword } from "../middleware/validatiors.js";
+import { generateUsername, generateFromEmail } from "unique-username-generator";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
-import generateUsernameSuggestions from "../utils/generateUsernameSuggestions.js";
 
 dotenv.config();
 
@@ -23,7 +22,6 @@ export const getUserProfile = async (req, res) => {
         errorHandler(error, res);
     }
 }
-
 export const updateUserProfileImage = async (req, res) => {
     try {
         const { identifier } = req.params;
@@ -70,39 +68,135 @@ export const updateUserProfileImage = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
-export const getSuggestedUsernames = async (req, res) => {
+export const getUsernameSuggestions = async (req, res) => {
     try {
-        const { name } = req.body;
+        const { identifier, name } = req.body;
 
-        if (!name) {
-            return res.status(400).json({
-                message: 'Name is required'
-            });
+        if (!identifier && !name) {
+            return res.status(400).json({ error: "Identifier or name must be provided." });
         }
 
-        const suggestions = await generateUsernameSuggestions(name);
+        let baseUsernames = [];
 
-        res.json({
-            success: true,
-            suggestions
+        if (identifier && identifier.includes("@")) {
+            // Extract username from email
+            const emailBase = identifier.split("@")[0].toLowerCase();
+            if (name) {
+                // Combine sanitized name and email username
+                const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+                baseUsernames = [
+                    sanitizedName,
+                    emailBase,
+                    `${sanitizedName}_${emailBase}`,
+                ];
+            } else {
+                baseUsernames = [emailBase];
+            }
+        } else if (name) {
+            // Use sanitized name as the base username
+            const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+            baseUsernames = [sanitizedName];
+        } else {
+            return res.status(400).json({ error: "Invalid identifier or name provided." });
+        }
+
+        // Generate variations with numbers and special characters
+        const specialCharacters = ["_", "-", ".", ""];
+        const numbers = Array.from({ length: 10 }, (_, i) => i.toString());
+        const variations = [];
+
+        baseUsernames.forEach((base) => {
+            variations.push(base); // Original
+            for (let i = 0; i < 3; i++) {
+                variations.push(
+                    `${base}${numbers[Math.floor(Math.random() * numbers.length)]}`,
+                    `${base}${specialCharacters[Math.floor(Math.random() * specialCharacters.length)]}`,
+                    `${base}${specialCharacters[Math.floor(Math.random() * specialCharacters.length)]}${numbers[Math.floor(Math.random() * numbers.length)]}`
+                );
+            }
         });
+
+        const suggestions = new Set();
+
+        // Generate unique suggestions until we have at least 5
+        while (suggestions.size < 5 && variations.length) {
+            const randomVariation = variations[Math.floor(Math.random() * variations.length)];
+            suggestions.add(randomVariation);
+        }
+
+        // Validate uniqueness against the database
+        const validSuggestions = [];
+        for (const suggestion of suggestions) {
+            const isTaken = await User.exists({ userName: suggestion });
+            if (!isTaken) {
+                validSuggestions.push(suggestion);
+            }
+        }
+
+        // Fallback suggestions if all initial suggestions are taken
+        if (validSuggestions.length === 0) {
+            for (let i = 0; i < 5; i++) {
+                const fallback = `${baseUsernames[0]}${Math.floor(Math.random() * 10000)}`;
+                const isTaken = await User.exists({ userName: fallback });
+                if (!isTaken) {
+                    validSuggestions.push(fallback);
+                }
+            }
+        }
+
+        if (validSuggestions.length === 0) {
+            return res.status(500).json({ error: "Could not generate available usernames. Please try a different identifier or name." });
+        }
+
+        return res.status(200).json({ suggestions: validSuggestions });
     } catch (error) {
-        console.error('Username generation error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Failed to generate username suggestions'
-        });
+        console.error("Error generating username suggestions:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
 export const setUsername = async (req, res) => {
     const { userName, identifier } = req.body;
 
-    
+    try {
+        // Validate input
+        if (!userName || userName.trim() === "") {
+            return res.status(400).json({ message: "Username is required." });
+        }
 
-}
+        // Check for username length (e.g., minimum 3 characters)
+        if (userName.length < 3) {
+            return res.status(400).json({ message: "Username must be at least 3 characters long." });
+        }
 
+        // Check for special characters        
+
+        // Check if the username is already taken
+        const existingUserName = await User.findOne({ userName });
+        if (existingUserName) {
+            return res.status(400).json({ message: "Username is already taken." });
+        }
+
+        // Find and update the user atomically
+        const updatedUser = await User.findOneAndUpdate(
+            { $or: [{ email: identifier }, { phone: identifier }], isVerified: true },
+            { userName },
+            { new: true } // Returns the updated document
+        );
+
+        // Handle case where user is not found or not verified
+        if (!updatedUser) {
+            return res.status(400).json({ message: "User not found or not verified." });
+        }
+
+        // Return success response
+        return res.status(200).json({ message: "Username updated successfully.", user: updatedUser });
+
+    } catch (error) {
+        console.error(`Error in setUsername controller: ${error.message}`);
+        errorHandler(error, res);
+    }
+};
 export const followUnfollowUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -145,10 +239,9 @@ export const followUnfollowUser = async (req, res) => {
         }
     } catch (error) {
         console.log(`error in followUnfollowUser controller: ${error.message}`);
-        errorHandler(error, res);
+        next(error);
     }
 }
-
 export const getSuggestedUsers = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -174,7 +267,6 @@ export const getSuggestedUsers = async (req, res) => {
         errorHandler(error, res);
     }
 }
-
 export const updateUser = async (req, res) => {
     const { fullName, email, userName, currentPassword, newPassword, bio, link } = req.body;
     let { profileImage, coverImage } = req.body;

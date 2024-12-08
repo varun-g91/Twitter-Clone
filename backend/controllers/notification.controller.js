@@ -1,4 +1,3 @@
-import errorHandler from "../middleware/errorHandler.js ";
 import Notification from "../models/notification.model.js";
 
 export const getNotifications = async (req, res) => {
@@ -16,7 +15,8 @@ export const getNotifications = async (req, res) => {
         res.status(200).json({data: notifications, count: notifications.length});
     } catch (error) {
         console.log(`error in getNotifications controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 export const deleteAllNotifications = async (req, res) => {
@@ -28,7 +28,8 @@ export const deleteAllNotifications = async (req, res) => {
         res.status(200).json({message: 'Notifications deleted successfully'});
     } catch (error) {
         console.log(`error in deleteNotifications controller: ${error.message}`);
-        errorHandler(error, res);   
+        // errorHandler(error, res);
+        next(error);
     }
 }
 
@@ -50,7 +51,8 @@ export const deleteNotification = async (req, res) => {
         res.status(200).json({ message: 'Notification deleted successfully' });
     } catch (error) {
         console.log(`error in deleteNotification controller: ${error.message}`);
-        errorHandler(error, res);
+        // errorHandler(error, res);
+        next(error);
     }
 }
 

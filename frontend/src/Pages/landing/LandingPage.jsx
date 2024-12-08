@@ -1,21 +1,31 @@
-import React, { useState } from "react";
 import XSvg from "../../components/svgs/X";
-import Buttons from "../../components/landingPage/Buttons";
 import HeaderText from "../../components/landingPage/HeaderText";
 import "../../custom.css";
 import Footer from "../../components/landingPage/Footer";
-import SignupFlow from "../../signup flow/SignupFlow";
+import SignupFlow from "../auth/signup/SignupFlow";
+import LoginFlow from "../auth/signup/components/image_editor/login/LoginFlow";
+import { useState } from "react";
+import GroupContainer1 from "../../components/landingPage/GroupContainer1";
 
 const LandingPage = () => {
-    const [isModalOpen, setIsOpenModal] = useState(false);
+    const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-    const openModal = () => {
-        setIsOpenModal(true);
+    // Function to reset the login modal and open the signup modal
+    const switchToSignup = () => {
+        setIsLoginModalOpen(false);
+        setTimeout(() => {
+            setIsSignupModalOpen(true); // Open signup modal
+        }, 300); // Optional delay to avoid modals overlapping
     };
 
-    const closeModal = () => {
-        setIsOpenModal(false);
-    };
+    // Function to reset the signup modal and open the login modal
+    // const switchToLogin = () => {
+    //     setIsSignupModalOpen(false); // Close signup modal
+    //     setTimeout(() => {
+    //         setIsLoginModalOpen(true); // Open login modal
+    //     }, 300);
+    // };
 
     return (
         <div className="container max-w-screen-2xl md:justify-center flex flex-row-reverse h-screen flex-grow-[1] flex-shrink-[1] basis-auto items-stretch box-border m-0 p-0 min-w-0 relative overflow-hidden">
@@ -26,7 +36,10 @@ const LandingPage = () => {
                 >
                     <XSvg className="w-24 lg:hidden fill-white" />
                     <HeaderText />
-                    <Buttons openModal={openModal} />
+                    <GroupContainer1
+                        openSignupModal={() => setIsSignupModalOpen(true)}
+                        openLoginModal={() => setIsLoginModalOpen(true)}
+                    />
                 </div>
             </div>
 
@@ -36,8 +49,19 @@ const LandingPage = () => {
                 </div>
             </div>
 
-            {isModalOpen && (
-                <SignupFlow isOpen={isModalOpen} onClose={closeModal} />
+            {isSignupModalOpen && (
+                <SignupFlow
+                    isOpen={isSignupModalOpen}
+                    onClose={() => setIsSignupModalOpen(false)}
+                />
+            )}
+
+            {isLoginModalOpen && (
+                <LoginFlow
+                    isOpen={isLoginModalOpen}
+                    onClose={() => setIsLoginModalOpen(false)}
+                    switchToSignup={switchToSignup}
+                />
             )}
 
             <Footer />
