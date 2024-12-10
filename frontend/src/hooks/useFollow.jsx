@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import toast from "react-hot-toast";
 
 const useFollow = () => {
@@ -7,14 +8,12 @@ const useFollow = () => {
     const { mutate: follow, isPending } = useMutation({
         mutationFn: async (userId) => {
             try {
-                const res = await fetch(`/api/users/follow/${userId}`, {
-                    method: "POST",
-                });
+                const response = await axios.post(`/api/users/follow/${userId}`);
 
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.error || "Something went wrong!");
-                }
+                if (response.status < 200 || response.status >= 300) {
+                    throw new Error(response.data.error || "Something went wrong!");
+                } 
+
                 return;
             } catch (error) {
                 throw new Error(error.message);
