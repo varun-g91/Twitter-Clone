@@ -19,7 +19,7 @@ import useUpdateUserProfile from "../../hooks/useUpdateUserProfile";
 import axios from "axios";
 
 const ProfilePage = () => { 
-    const { data: authUser, isLoading } = useQuery({
+    const { data: authUser } = useQuery({
         queryKey: ["authUser"],
     })
 
@@ -33,7 +33,6 @@ const ProfilePage = () => {
     const { username } = useParams();
 
     const { follow, isPending } = useFollow();
-    const { data: authUser } = useQuery({ queryKey: ["authUser"] });
 
     const {
         data: user,
