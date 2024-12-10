@@ -5,7 +5,7 @@ import cloudinary from 'cloudinary';
 import Notification from "../models/notification.model.js";
 
 
-export const createPost = async (req, res) => {
+export const createPost = async (req, res, next) => {
     try {
         const { text } = req.body;
         let { image } = req.body;
@@ -22,11 +22,18 @@ export const createPost = async (req, res) => {
             return res.status(400).json({ error: 'Please provide text or image' });
         }
 
+        // Cloudinary config
+        cloudinary.config({
+            cloud_name: process.env.ClOUDINARY_CLOUD_NAME,
+            api_key: process.env.ClOUDINARY_API_KEY,
+            api_secret: process.env.ClOUDINARY_API_SECRET
+        });
+        
         if (image) {
             const uploadedResponse = await cloudinary.uploader.upload(image);
             image = uploadedResponse.secure_url;
         }
-
+        
         const newPost = new Post({
             user: userId,
             text: text,
@@ -44,7 +51,7 @@ export const createPost = async (req, res) => {
     }
 }
 
-export const deletePost = async (req, res) => {
+export const deletePost = async (req, res, next) => {
     try {
         const post = await Post.findById(req.params.id);
 
@@ -71,7 +78,7 @@ export const deletePost = async (req, res) => {
     }
 }
 
-export const commentOnPost = async (req, res) => {
+export const commentOnPost = async (req, res, next) => {
     try {
         const { text } = req.body;
         const postId = req.params.id;
@@ -102,7 +109,7 @@ export const commentOnPost = async (req, res) => {
     }
 }
 
-export const likeUnlikePost = async (req, res) => {
+export const likeUnlikePost = async (req, res, next) => {
     try {
         const {id:postId} = req.params;
         const userId = req.user._id;
@@ -118,8 +125,11 @@ export const likeUnlikePost = async (req, res) => {
         if (userLikedPost) {
             await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
             await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } });
-            res.status(200).json({ message: 'Post unliked successfully' });
+
+            const updatedLikes = post.likes.filter((id) => id.toString() !== userId.toString());    
+            res.status(200).json(updatedLikes);
         } else {
+
             post.likes.push(userId);
             await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } });
             await post.save();
@@ -131,9 +141,11 @@ export const likeUnlikePost = async (req, res) => {
                 type: "like",
             });
 
-            await notification.save();  
+            await notification.save(); 
+            
+            const updatedLikes = post.likes;
 
-            res.status(200).json({ message: 'Post liked successfully' });
+            res.status(200).json(updatedLikes);
         }
     } catch (error) {
         console.log(`error in likeUnlikePost controller: ${error.message}`);
@@ -142,7 +154,7 @@ export const likeUnlikePost = async (req, res) => {
     }
 }
 
-export const getAllPosts = async (req, res) => {
+export const getAllPosts = async (req, res, next) => {
     try {
         const posts = await Post.find()
         .sort({ createdAt: -1 })
@@ -168,7 +180,7 @@ export const getAllPosts = async (req, res) => {
     }
 }
 
-export const getLikedPosts = async (req, res) => {
+export const getLikedPosts = async (req, res, next) => {
     const userId = req.params.id; 
 
     try {
@@ -196,7 +208,7 @@ export const getLikedPosts = async (req, res) => {
     }
 }
 
-export const getFollowingPosts = async (req, res) => {
+export const getFollowingPosts = async (req, res, next) => {
     try {
         const userId = req.user._id;
         
@@ -226,7 +238,7 @@ export const getFollowingPosts = async (req, res) => {
     }
 }
 
-export const getUserPosts = async (req, res) => {
+export const getUserPosts = async (req, res, next) => {
     try {
         const { username } = req.params;
 
