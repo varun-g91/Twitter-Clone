@@ -2,7 +2,7 @@
     import { TbCameraStar } from "react-icons/tb";
     import { FaUser } from "react-icons/fa6";
     import { IoMdClose } from "react-icons/io";
-    import ImageEditor from "../components/image_editor/ImageEditor";
+    import ImageEditor from "../../../../components/common/image_editor/ImageEditor";
     import { SignupContext } from "../SignupContext";
     import { useMutation } from "@tanstack/react-query";
     import axios from "axios";
@@ -54,11 +54,6 @@
             
     });
 
-        const handleImageUpload = () => {
-            if (fileInputRef.current) {
-                fileInputRef.current.click();
-            }
-        };
 
         const handleFileChange = (event) => {
             const file = event.target.files[0];
