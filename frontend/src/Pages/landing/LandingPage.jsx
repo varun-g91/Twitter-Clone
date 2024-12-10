@@ -3,7 +3,7 @@ import HeaderText from "../../components/landingPage/HeaderText";
 import "../../custom.css";
 import Footer from "../../components/landingPage/Footer";
 import SignupFlow from "../auth/signup/SignupFlow";
-import LoginFlow from "../auth/signup/components/image_editor/login/LoginFlow";
+import LoginFlow from "../auth/login/LoginFlow";
 import { useState } from "react";
 import GroupContainer1 from "../../components/landingPage/GroupContainer1";
 
