@@ -214,72 +214,75 @@ export const login = async (req, res, next) => {
     try {
         const { identifier, password, step } = req.body;
 
-        // Step 1: Verify if the user exists (Identifier Check)
-        if (step === 1) {
-            // Find the user by either email or username
-            const user = await User.findOne({
-                $or: [{ email: identifier }, { userName: identifier }, { phone: identifier }],
-            });
+        // Declare user outside the switch block
+        let user;
+        const stepNumber = Number(step);
 
-            if (!user) {
-                return res.status(404).json({ status: 'error', message: 'User not found' });
-            }
+        switch (stepNumber) {
+            case 1:
+                // Find the user by either email, username, or phone
+                user = await User.findOne({
+                    $or: [{ email: identifier }, { userName: identifier }, { phone: identifier }],
+                });
 
-            // Respond with success to proceed to Step 2
-            return res.status(200).json({
-                status: 'success',
-                message: 'User found',
-                identifier: identifier,
-            });
+                if (!user) {
+                    return res.status(404).json({ status: 'error', message: 'User not found' });
+                }
+
+                // Respond with success to proceed to Step 2
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'User found',
+                    identifier: identifier,
+                });
+
+            case 2:
+                // Ensure both identifier and password are provided
+                if (!identifier || !password) {
+                    return res
+                        .status(400)
+                        .json({ status: 'error', message: 'Identifier and password are required' });
+                }
+
+                // Find the user again
+                user = await User.findOne({
+                    $or: [{ email: identifier }, { userName: identifier }, { phone: identifier }],
+                });
+
+                if (!user) {
+                    return res.status(404).json({ status: 'error', message: 'User not found' });
+                }
+
+                // Check if the password is correct
+                const isPasswordValid = await bcrypt.compare(password, user.password || '');
+                if (!isPasswordValid) {
+                    console.log('Invalid password for user:', user.email);
+                    return res.status(401).json({ status: 'error', message: 'Invalid password' });
+                }
+
+                // Generate token and set cookie
+                generateTokenAndSetCookie(user._id, res);
+
+                return res.status(200).json({
+                    _id: user._id,
+                    fullName: user.fullName,
+                    userName: user.userName,
+                    email: user.email,
+                    followers: user.followers,
+                    following: user.following,
+                    profileImage: user.profileImage,
+                    coverImage: user.coverImage,
+                });
+
+            default:
+                return res.status(400).json({ status: 'error', message: 'Invalid step' });
         }
-
-        // Step 2: Validate the password
-        if (step === 2) {
-            // Ensure both identifier and password are provided
-            if (!identifier || !password) {
-                return res
-                    .status(400)
-                    .json({ status: 'error', message: 'Identifier and password are required' });
-            }
-
-            // Find the user again
-            const user = await User.findOne({
-                $or: [{ email: identifier }, { userName: identifier }, { phone: identifier }],
-            });
-
-            if (!user) {
-                return res.status(404).json({ status: 'error', message: 'User not found' });
-            }
-
-            // Check if the password is correct
-            const isPasswordValid = await bcrypt.compare(password, user?.password || '');
-            if (!isPasswordValid) {
-                console.log("Invalid password for user:", user?.email); 
-                return res.status(401).json({ status: 'error', message: 'Invalid password' });
-            }
-
-            // Generate token and set cookie
-            generateTokenAndSetCookie(user._id, res);
-
-            return res.status(200).json({
-                _id: user._id,
-                fullName: user.fullName,
-                userName: user.userName,
-                email: user.email,
-                followers: user.followers,
-                following: user.following,
-                profileImage: user.profileImage,
-                coverImage: user.coverImage,
-            });
-        }
-
-        // If step is invalid, return error
-        return res.status(400).json({ status: 'error', message: 'Invalid step' });
     } catch (error) {
         console.error('Error at login controller:', error.message);
         next(error);
     }
 };
+
 
 export const logout = async (req, res, next) => {
     try {
