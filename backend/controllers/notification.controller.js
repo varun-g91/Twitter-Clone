@@ -12,7 +12,7 @@ export const getNotifications = async (req, res) => {
 
         await Notification.updateMany({to: userId}, {read: true});
 
-        res.status(200).json({data: notifications, count: notifications.length});
+        res.status(200).json(notifications);
     } catch (error) {
         console.log(`error in getNotifications controller: ${error.message}`);
         // errorHandler(error, res);

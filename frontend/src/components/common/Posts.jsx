@@ -4,15 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import axios from "axios";
 
-const Posts = ({ feedType, username, userId }) => {
+const Posts = ({ feedType, userName, userId }) => {
     const getPostEndpoint = () => {
         switch (feedType) {
-            case "forYou":
+            case "forYou": 
                 return "/api/posts/all";
             case "following":
                 return "/api/posts/following";
             case "posts":
-                return `/api/posts/user/${username}`;
+                return `/api/posts/user/${userName}`;
             case "likes":
                 return `/api/posts/likes/${userId}`;
             default:
@@ -25,30 +25,25 @@ const Posts = ({ feedType, username, userId }) => {
     const {
         data: posts,
         isLoading,
-        refetch,
         isRefetching,
     } = useQuery({
-        queryKey: ["posts"],
+        queryKey: ["posts", feedType, userName, userId],
         queryFn: async () => {
-            try {
-                const response = await axios.get(POST_ENDPOINT);
-                
-                if (response.status !== 200) {
-                    throw new Error(
-                        response?.data?.message || "Something went wrong"
-                    );
-                }
-
-                return response.data?.posts;
-            } catch (error) {
-                throw new Error(error);
+            const response = await axios.get(POST_ENDPOINT);
+            console.log("response:",response.data);  
+            if (response.status !== 200) {
+                throw new Error(
+                    response?.data?.message || "Something went wrong"
+                );
             }
+            return response.data?.posts;
+        },
+
+        onError: (err) => {
+            console.error("Error fetching posts:", err.message);
         },
     });
 
-    useEffect(() => {
-        refetch();
-    }, [feedType, refetch, username]);
 
     return (
         <>
@@ -66,7 +61,7 @@ const Posts = ({ feedType, username, userId }) => {
                 </p>
             )}
             {!isLoading && !isRefetching && posts && (
-                <div className="flex flex-col overflow-y-scroll h-[70vh] scrollbar-daisy">
+                <div className="flex flex-col overflow-y-scroll h-[70vh] scrollbar-daisy ">
                     {posts.map((post) => (
                         <Post key={post._id} post={post} />
                     ))}

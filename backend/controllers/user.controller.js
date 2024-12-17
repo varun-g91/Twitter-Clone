@@ -10,6 +10,8 @@ dotenv.config();
 
 export const getUserProfile = async (req, res) => {
     const { userName } = req.params;
+    console.log("Request URL:", req.originalUrl);
+    console.log("Request Params:", req.params);
 
     try {
         const user = await User.findOne({ userName }).select('-password');
@@ -22,6 +24,7 @@ export const getUserProfile = async (req, res) => {
         errorHandler(error, res);
     }
 }
+
 export const updateUserProfileImage = async (req, res) => {
     try {
         const { identifier } = req.params;

@@ -44,17 +44,17 @@ const RightPanel = () => {
                     {!isLoading &&
                         suggestedUsers?.map((user) => (
                             <Link
-                                to={`/profile/${user.username}`}
+                                to={`/profile/${user.userName}`}
                                 className="flex items-center justify-between gap-4"
                                 key={user._id}
                             >
                                 <div className="flex gap-2 items-center">
                                     <div className="avatar">
-                                        <div className="w-8 rounded-full">
+                                        <div className="w-8 h-8 rounded-full">
                                             <img
                                                 src={
-                                                    user.profileImg ||
-                                                    "/avatar-placeholder.png"
+                                                    user.profileImage ||
+                                                    "frontend/public/avatars/profile-img-paceholder.jpg"
                                                 }
                                             />
                                         </div>

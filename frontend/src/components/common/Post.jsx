@@ -124,13 +124,13 @@ import axios from "axios";
                 <div className="flex gap-2 items-start p-4 border-b border-gray-700">
                     <div className="avatar">
                         <Link
-                            to={`/profile/${postOwner.username}`}
+                            to={`/profile/${postOwner.userName}`}
                             className="w-8 rounded-full overflow-hidden"
                         >
                             <img
                                 src={
-                                    postOwner.profileImg ||
-                                    "/avatar-placeholder.png"
+                                    postOwner.profileImage ||
+                                    "frontend/public/avatars/profile-img-paceholder.jpg"
                                 }
                             />
                         </Link>
@@ -138,14 +138,14 @@ import axios from "axios";
                     <div className="flex flex-col flex-1">
                         <div className="flex gap-2 items-center">
                             <Link
-                                to={`/profile/${postOwner.username}`}
+                                to={`/profile/${postOwner.userName}`}
                                 className="font-bold"
                             >
                                 {postOwner.fullName}
                             </Link>
                             <span className="text-gray-700 flex gap-1 text-sm">
-                                <Link to={`/profile/${postOwner.username}`}>
-                                    @{postOwner.username}
+                                <Link to={`/profile/${postOwner.userName}`}>
+                                    @{postOwner.userName}
                                 </Link>
                                 <span>·</span>
                                 <span>{formattedDate}</span>
@@ -216,8 +216,8 @@ import axios from "axios";
                                                             <img
                                                                 src={
                                                                     comment.user
-                                                                        .profileImg ||
-                                                                    "/avatar-placeholder.png"
+                                                                        .profileImage ||
+                                                                    "frontend/public/avatars/profile-img-paceholder.jpg"
                                                                 }
                                                             />
                                                         </div>
@@ -234,7 +234,7 @@ import axios from "axios";
                                                                 @
                                                                 {
                                                                     comment.user
-                                                                        .username
+                                                                        .userName
                                                                 }
                                                             </span>
                                                         </div>

@@ -19,7 +19,7 @@ import { useMutation } from "@tanstack/react-query";
 
 
         const [password ,setPassword] = useState("");
-        const [showPassword ,setShowPassword] = useState("");
+        const [showPassword ,setShowPassword] = useState(false);
         const passwordInputRef = useRef(null);
         // In SignupFlow component
         const handlePasswordChange = (password) => {

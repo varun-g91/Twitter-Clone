@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import Spinner from "./components/svgs/Spinner";
+import ProfilePage from "./Pages/profile/ProfilePage";
+import NotificationPage from "./Pages/notification/NotificationPage";
 
 
 function App() {
@@ -54,6 +56,16 @@ function App() {
                 <Route
                     path="/home"
                     element={authUser ? <HomePage authUser={authUser} /> : <Navigate to="/" />}
+                />
+
+                <Route
+                    path="/profile/:userName"
+                    element={authUser ? <ProfilePage /> : <Navigate to="/" />}
+                />
+
+                <Route
+                    path="/notifications"
+                    element={authUser ? <NotificationPage /> : <Navigate to="/" />}  
                 />
             </Routes>
             <Toaster />

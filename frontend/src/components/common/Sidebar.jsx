@@ -32,8 +32,8 @@ const Sidebar = () => {
             }
         },
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["authUser"] });
-          navigate("/");  
+            queryClient.invalidateQueries({ queryKey: ["authUser"] });
+            navigate("/");  
         },
 
         onError: (error) => {
@@ -73,7 +73,7 @@ const Sidebar = () => {
 
                     <li className="flex justify-center md:justify-start">
                         <Link
-                            to={`/profile/${authUser?.username}`}
+                            to={`/profile/${authUser?.userName}`}
                             className="flex gap-3 items-center hover:bg-stone-900 transition-all rounded-full duration-300 py-2 pl-2 pr-4 max-w-fit cursor-pointer"
                         >
                             <FaUser className="w-6 h-6" />
@@ -85,14 +85,14 @@ const Sidebar = () => {
                 </ul>
                 {authUser && (
                     <Link
-                        to={`/profile/${authUser.username}`}
+                        to={`/profile/${authUser.userName}`}
                         className="mt-auto mb-10 flex gap-2 items-start transition-all duration-300 hover:bg-[#181818] py-2 px-4 rounded-full"
                     >
                         <div className="avatar hidden md:inline-flex">
                             <div className="w-8 rounded-full">
                                 <img
                                     src={
-                                        authUser?.profileImg ||
+                                        authUser?.profileImage ||
                                         "/avatar-placeholder.png"
                                     }
                                 />
@@ -104,7 +104,7 @@ const Sidebar = () => {
                                     {authUser?.fullName}
                                 </p>
                                 <p className="text-slate-500 text-sm">
-                                    @{authUser?.username}
+                                    @{authUser?.userName}
                                 </p>
                             </div>
                             <BiLogOut className="w-5 h-5 cursor-pointer"

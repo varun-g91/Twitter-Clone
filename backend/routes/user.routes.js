@@ -12,8 +12,8 @@ import {
 
 const router = express.Router();
 
-router.get('/profile/:identifier', protectRoute, getUserProfile);
-router.post('/profile/:identifier/set-profile-image', updateUserProfileImage);
+router.get('/profile/:userName', protectRoute, getUserProfile);
+router.post('/profile/:userName/set-profile-image', updateUserProfileImage);
 router.post('/generate-username', getUsernameSuggestions)
 router.post('/set-username', setUsername);
 router.get('/suggested', protectRoute, getSuggestedUsers);
